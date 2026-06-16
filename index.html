@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pseudo-3D Racer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    position: fixed;
+  }
+  
+  #container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; height: 100%;
+  }
+  
+  canvas {
+    display: block;
+    image-rendering: auto;
+    border: 1px solid #222;
+  }
+
+  /* Touch controls */
+
+
+    #touch-controls {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 45%;
+       pointer-events: none;
+    z-index: 10;
+  }
+  .touch-active #touch-controls {
+    display: block;
+  }
+
+  .touch-btn {
+    position: absolute;
+    pointer-events: auto;
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 24px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .touch-btn:active { background: rgba(255,255,255,0.3); }
+  #btn-left   { bottom: 8%; left: 6%;  width: 22vmin; height: 22vmin; max-width: 80px; max-height: 80px; }
+  #btn-right  { bottom: 8%; left: 32%; width: 22vmin; height: 22vmin; max-width: 80px; max-height: 80px; }
+  #btn-up     { bottom: 32%; right: 32%; width: 20vmin; height: 20vmin; max-width: 75px; max-height: 75px; }
+  #btn-down   { bottom: 8%; right: 32%; width: 20vmin; height: 20vmin; max-width: 75px; max-height: 75px; }
+  #btn-start  { bottom: 20%; left: 50%; transform: translateX(-50%); width: 50vmin; max-width: 160px; height: 44px; border-radius: 22px; font-size: 16px; }
+  /* Landscape phone adjustments */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #btn-left  { bottom: 5%; left: 2%;  width: 14vmin; height: 14vmin; max-width: 55px; max-height: 55px; }
+    #btn-right { bottom: 5%; left: 22%; width: 14vmin; height: 14vmin; max-width: 55px; max-height: 55px; }
+    #btn-up    { bottom: 28%; right: 22%; width: 13vmin; height: 13vmin; max-width: 50px; max-height: 50px; }
+    #btn-down  { bottom: 5%;  right: 22%; width: 13vmin; height: 13vmin; max-width: 50px; max-height: 50px; }
+  }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+  <canvas id="game"></canvas>
+</div>
+
+<div id="touch-controls">
+  <button class="touch-btn" id="btn-left">◀</button>
+  <button class="touch-btn" id="btn-right">▶</button>
+  <button class="touch-btn" id="btn-up">▲</button>
+  <button class="touch-btn" id="btn-down">▼</button>
+  <button class="touch-btn" id="btn-start">START</button>
+  </div>
+
+
+
+
+
+
