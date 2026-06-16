@@ -224,8 +224,150 @@ function placeSprites(segments) {
   }
 }
 
+
+function placeNitro(segments) {
+  // Place nitro pickups on straights and gentle curves, roughly every ~40 segments
+  const len = segments.length;
+  for (let i = 5; i < len; i += 37) {
+    // Only on relatively straight sections
+    if (Math.abs(segments[i].curve) < 0.4) {
+      segments[i].nitro = true;
+    }
+  }
+}
+
+const TRACK = buildTrack(TRACK_SECTIONS);
+const TOTAL_SEGMENTS = TRACK.segments.length;
+
+
+
+//  GAME STATE
+
+const STATE = {
+  position:    0,
+  speed:       0,
+  steering:    0,
+  cameraDx:   0,
+
+  input: { accelerate: false, brake: false, left: false, right: false },
+
+  lapTime:     0,
+  raceTime:    0,
+  bestLap:     Infinity,
+  currentLap:  0,
+  maxLaps:     3,
+  lapProgress: 0,
+
+  state:       'waiting',
+  countdown:   3,
+  countdownTimer: 0,
+
+  lastTime:    0,
+  fps:         0, fpsFrames: 0, fpsTime: 0,
+
+  offRoad:     false,
+  offRoadTimer: 0,
+  shakeX: 0, shakeY: 0,
+
+
+  // Nitro
+  nitroActive: false,
+  nitroTimer:  0,
+  nitroCollected: 0,
+
+  // Opponents passed
+  opponentsPassed: 0,
+};
+
+
+//  OPPONENT CARS.  
+
+function createOpponents() {
+  const opponents = [];
+  const colors = ['#2266cc', '#44aa22', '#cc8800', '#aa44cc'];
+  const baseSpeeds = [180, 210, 240, 270]; // varying difficulty
+  const lanes = [-0.4, 0.3, -0.2, 0.35];  // lane offsets (-0.5..0.5)
+  const startOffsets = [0.15, 0.3, 0.5, 0.65]; // start spread around track
+
+  for (let i = 0; i < OPPONENT_COUNT; i++) {
+    opponents.push({
+      position: TRACK.totalLength * startOffsets[i],
+      speed: baseSpeeds[i] + (Math.random() - 0.5) * 40,
+      laneOffset: lanes[i],
+      color: colors[i],
+      wobble: Math.random() * Math.PI * 2, // for lane variation
+      wobbleSpeed: 0.3 + Math.random() * 0.4,
+      screen: { x: 0, y: 0, w: 0, scale: 0 },
+    });
+  }
+  return opponents;
+}
+
+let opponents = createOpponents();
+
+//  PARTICLE SYSTEM
+
+const particles = [];
+
+function spawnParticle(x, y, vx, vy, life, color, size) {
+  if (particles.length >= MAX_PARTICLES) particles.shift();
+  particles.push({ x, y, vx, vy, life, maxLife: life, color, size });
+}
+
+function spawnSmoke(x, y, scale) {
+  const count = 3 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++){
+    spawnParticle(
+      x + (Math.random() - 0.5) * 20 * scale,
+      y + (Math.random() - 0.5) * 10 * scale,
+      (Math.random() - 0.5) * 40 * scale,
+      -(20 + Math.random() * 40) * scale,
+      0.3 + Math.random() * 0.5,
+      `rgba(${180+Math.random()*75},${180+Math.random()*75},${180+Math.random()*75},0.6)`,
+      3 * scale + Math.random() * 5 * scale
+    );
+  }
+}
+
+
+function spawnSparks(x, y, scale) {
+  const count = 3 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    spawnParticle(
+      x, y,
+      (Math.random() - 0.5) * 100 * scale,
+      (Math.random() - 0.5) * 100 * scale - 30 * scale,
+      0.15 + Math.random() * 0.3,
+      Math.random() > 0.5 ? '#ffaa00' : '#ff4400',
+      1.5 * scale + Math.random() * 3 * scale
+    );
+  }
+}
+
+function spawnNitroFlame(x, y, scale) {
+  const count = 5 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < count; i++) {
+    spawnParticle(
+      x + (Math.random() - 0.5) * 15 * scale,
+      y,
+      (Math.random() - 0.5) * 30 * scale,
+      -(40 + Math.random() * 80) * scale,
+      0.2 + Math.random() * 0.4,
+      Math.random() > 0.5 ? '#00ccff' : '#0066ff',
+      2 * scale + Math.random() * 6 * scale
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
 </script>
-
-
 
 
