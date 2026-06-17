@@ -357,7 +357,87 @@ function spawnNitroFlame(x, y, scale) {
       2 * scale + Math.random() * 6 * scale
     );
   }
+
 }
+
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+
+function renderParticles() {
+  for (const p of particles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    const color = p.color.replace(/[\d.]+\)$/, `${alpha * 0.8})`);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * (0.3 + alpha * 0.7), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+
+//  INPUT HANDLING
+
+
+function setInput(key, down) {
+  switch(key) {
+    case 'up':    STATE.input.accelerate = down; break;
+    case 'down':  STATE.input.brake = down; break;
+    case 'left':  STATE.input.brake = down; break;
+    case 'right': STATE.input.brake = down; break;
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  switch (e.code) {
+    case 'ArrowUp':    case 'KeyW': setInput('up', true); break;
+    case 'ArrowDown':  case 'KeyS': setInput('down', true); break;
+    case 'ArrowLeft':  case 'KeyA': setInput('left', true); break;
+    case 'ArrowRight': case 'KeyD': setInput('right', true); break;
+    case 'Space': case 'Enter':
+       if (STATE.state === 'waiting') startCountdown();
+      else if (STATE.state === 'finished') resetRace();
+      break;
+      case 'KeyN' // N for Nitro
+
+      activateNitro();
+      break;
+    default: return;
+  }
+  e.preventDefault();
+});
+
+
+document.addEventListener('keyup', (e) => {
+  switch (e.code) {
+    case 'ArrowUp':    case 'KeyW': setInput('up', false); break;
+    case 'ArrowDown':  case 'KeyS': setInput('down', false); break;
+    case 'ArrowLeft':  case 'KeyA': setInput('left', false); break;
+    case 'ArrowRight': case 'KeyD': setInput('right', false); break;
+    default: return;
+  }
+  e.preventDefault();
+});
+
+// Touch controls
+
+function setupTouchButton(id, key) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); setInput(key, true); });
+  btn.addEventListener('pointerup',   (e) => { e.preventDefault(); setInput(key, false); });
+  btn.addEventListener('pointerleave',(e) => { setInput(key, false); });
+  btn.addEventListener('pointercancel',(e)=>{ setInput(key, false); });
+}
+
 
 
 
