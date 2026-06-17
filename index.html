@@ -625,8 +625,133 @@ function update(dt) {
     if (STATE.offRoadTimer <= 0) STATE.offRoad = false;
   }
 
-  // Position update
+  // Nitro pickup detection
+  if (seg.nitro && !STATE.nitroActive && STATE.nitroTimer <= 0) {
+    // Player is on a nitro segment — collect it
+    if (Math.abs(STATE.cameraDx) < halfRoad * 0.7) {
+      seg.nitro = false; // consumed
+      STATE.nitroCollected++;
+    }
+  }
+
+
+   // --- Opponent AI ---
+
+   for (const opp of opponents) {
+    opp.position += opp.speed * clamped;
+     //lane wobble 
+
+    opp.wobble += opp.wobbleSpeed * clamped;
+    opp.laneOffset += Math.sin(opp.wobble) * 0.001;
+    opp.laneOffset = Math.max(-0.45, Math.min(0.45, oppo.laneOffset));
+
+    // Detect opponent overtake
+
+    const playerPos = STATE.position % TRACK.totalLength;
+    const oppoPos = opp.position % TRACK.totalLength;
+
+// Simple detection: if player is close behind and then ahead.  // // We'll handle this in the render/hud via distance comparison
+  }
+
+  //  --- Lap detection ---
+  const prevProgress = STATE.lapProgress;
+  STATE.lapProgress = (STATE.position % TRACK.totalLength) / TRACK.totalLength();
+
+  if (prevProgress > 0.9 && STATE.lapProgress < 0.1) {
+    if (STATE.currentLap > 0) {
+      if (STATE.lapTime < STATE.bestLap) STATE.bestLap = STATE.lapTime;
+    }
+    STATE.currentLap++;
+    STATE.lapTime = 0;
+    if (STATE.currentLap >= STATE.maxLaps) {
+      finishRace();
+    }
+  }
+
+  if(STATE.state === 'racing') {
+    STATE.lapTime += clamped;
+    STATE.raceTime += clamped;
+  }
+
+
+// particle 
+
+updateParticles(dt);
+
+
+// Spawn tire smoke when accelerating hard
+
+if (STATE.input.accelerate && STATE.speed > 100 && Math.random() < 0.3){
+  spawnSmoke(W / 2 + STATE.steering * 25, H * 0.85, 0.5 + STATE.speed / MAX_SPEED * 0.8);
+  }
+
+
+  // Nitro flames
+
+  if (STATE.nitroActive && Math.random() < 0.7) {
+    spawnNitroFlame(W / 2 + (Math.random() - 0.5) * 20, H * 0.88, 0.6);
+  }
+
+   // Off-road dust
+
+   if (STATE.offRoad) {
+    spawnNitroFlame(W / 2 +(Math.random() - 0.5) * 60, H * 0.8, 0.4);
+  }
+
+
+  // Rumble sparks when near edge
+if (Math.abs(STATE.cameraDx) > halfRoad * 0.7 && Math.abs(STATE.cameraDx) < halfRoad * 0.95 && Math.random() < 0.2) {
+  spawnSparks(W / 2 + (STATE.cameraDx > 0 ? 1 : -1) * 100, H * 0.82, 0.3);
+  }
+}
+
+
+//  RENDERING
+
+
+function drawSky() {
+  const grad = ctx.createLinearGradient(0, 0, 0, H * 0.55);
+  grad.addColorStop(0,    '#0a0a2e');
+  grad.addColorStop(0.5,  '#1a1a4e');
+  grad.addColorStop(0.85, '#4a6fa5');
+  grad.addColorStop(1,    '#87CEEB');
+  ctx.fillStyle = grad;
+
+  const sunX = W * 0.75, sunY = H * 0.18, sunR = 30 / RES;
+  const glow = ctx.createRadialGradient(sunX, sunY, sunR * 0.5, sunX, sunY, sunR * 3);
+  glow.addColorStop(0, 'rgba(255,255,200,0.9)');
+  glow.addColorStop(0.5, 'rgba(255,200,100,0.3)');
+  glow.addColorStop(1, 'rgba(255,150,50,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(sunX - sunR * 3, sunY - sunR * 3, sunR * 6, sunR * 6);
+  ctx.fillStyle = '#fffde0';
+  ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2); ctx.fill();
+}
+function drawMountains(cameraDx) {
+  const horizonY = H * 0.42;
+  const parallax = cameraDx * 0.0005;
+
+   // Back mountains
+
+   ctx.fillStyle = '#3a506b';
+   ctx.beginPath(); ctx.moveTo(0, H);
+
+   const peak = 12 ;
+   or (let i = 0; i <= peaks; i++) {
+    const x = (i / peaks) * W;
+    const nh = Math.sin(i * 1.7 + 0.3) * 25 + Math.sin(i * 3.1 + 1.2) * 15 + 35;
+    ctx.lineTo(x + parallax * 30, horizonY - nh / RES + (i % 3 === 0 ? -15 / RES : 0));
+  }
+
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+  // Front mountains
   
+
+
+
+
+
 
 
 
