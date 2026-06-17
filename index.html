@@ -734,19 +734,128 @@ function drawMountains(cameraDx) {
    // Back mountains
 
    ctx.fillStyle = '#3a506b';
-   ctx.beginPath(); ctx.moveTo(0, H);
-
-   const peak = 12 ;
-   or (let i = 0; i <= peaks; i++) {
+  ctx.beginPath(); ctx.moveTo(0, H);
+  const peaks = 12;
+  for (let i = 0; i <= peaks; i++) {
     const x = (i / peaks) * W;
     const nh = Math.sin(i * 1.7 + 0.3) * 25 + Math.sin(i * 3.1 + 1.2) * 15 + 35;
     ctx.lineTo(x + parallax * 30, horizonY - nh / RES + (i % 3 === 0 ? -15 / RES : 0));
   }
-
   ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
 
+
   // Front mountains
-  
+  ctx.fillStyle = '#5c7c99';
+  ctx.beginPath(); ctx.moveTo(0, H);
+  for (let i = 0; i <= peaks; i++) {
+    const x = (i / peaks) * W;
+    const nh = Math.sin(i * 2.3 + 1.1) * 20 + Math.sin(i * 4.1 + 0.7) * 10 + 25;
+    ctx.lineTo(x + parallax * 50, horizonY - 5 / RES - nh / RES);
+  }
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+}
+
+function drawRoad(cameraZ, cameraDx) {
+  const baseIndex = Math.floor (cameraZ / SEGMENT_LEN) % TOTAL_SEGMENTS;
+  const segments = TRACK.segments;
+let prevScreen = null;
+  let dx = cameraDx;
+
+  const camSeg   = segments[baseIndex];
+  const cameraY  = camSeg.p1.y + CAMERA_H;
+
+  for (let n = 0; n < DRAW_DIST; n++) {
+    const idx = (baseIndex + n) % TOTAL_SEGMENTS;
+    const seg = segments[idx];
+    const worldZ = seg.p1.z;
+    const z = worldZ - cameraZ;
+
+    if (z <= 0) { dx += seg.curve; continue; }
+
+    const scale = FIELD_OF_VIEW / z;
+    const screenX = W / 2 + (dx * scale);
+    const screenY = H / 2 - ((seg.p1.y - cameraY) * scale);
+    const screenW = ROAD_WIDTH * scale;
+
+    seg.screen.x = screenX;
+    seg.screen.y = screenY;
+    seg.screen.w = screenW;
+    seg.screen.scale = scale;
+
+    if (prevScreen && prevScreen.y < H) {
+
+      drawSegmentTrapezoid(prevScreen, seg.screen, seg.roadColor, seg.curve, seg.nitro);
+    }
+    prevScreen = { x: screenX, y: screenY, w: screenW, scale };
+    dx += seg.curve;
+    if (screenW < 0.3) break;
+  }
+}
+
+function drawSegmentTrapezoid(prev, curr, roadColor, curve, hasNitro) {
+  const topY = curr.y, bottomY = prev.y;
+  if (topY >= bottomY) return;
+}
+
+
+ // Grass
+
+ ctx.fillStyle = '#4a7c3f';
+ ctx.fillRect(0, topY, W, bottomY - topY);
+
+
+ // Road surface
+
+
+ const roadFill = roadColor === 0 ? '#6b6b6b' : '#4a4a4a';
+ ctx.fillStyle = roadFill;
+ ctx.beginPath();
+  ctx.moveTo(curr.x - curr.w, curr.y);
+  ctx.lineTo(curr.x + curr.w, curr.y);
+  ctx.lineTo(prev.x + prev.w, prev.y);
+  ctx.lineTo(prev.x - prev.w, prev.y);
+  ctx.closePath();
+  ctx.fill();
+
+// Nitro pickup glow on road
+if (hasNitro && curr.w > 3) {
+  const alpha = 0.4 + Math.sin(performance.now() * 0.005) * 0.2;
+    const glowW_curr = curr.w * 0.06;
+    const glowW_prev = prev.w * 0.06;
+    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(curr.x - glowW_curr, curr.y);
+    ctx.lineTo(curr.x + glowW_curr, curr.y);
+    ctx.lineTo(prev.x + glowW_prev, prev.y);
+    ctx.lineTo(prev.x - glowW_prev, prev.y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Outer glow
+    const outW_curr = curr.w * 0.1;
+    const outW_prev = prev.w * 0.1;
+    ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.4})`;
+    ctx.beginPath();
+    ctx.moveTo(curr.x - outW_curr, curr.y);
+    ctx.lineTo(curr.x + outW_curr, curr.y);
+    ctx.lineTo(prev.x + outW_prev, prev.y);
+    ctx.lineTo(prev.x - outW_prev, prev.y);
+    ctx.closePath();
+    ctx.fill();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
