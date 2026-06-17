@@ -438,12 +438,195 @@ function setupTouchButton(id, key) {
   btn.addEventListener('pointercancel',(e)=>{ setInput(key, false); });
 }
 
+setupTouchButton('btn-left',  'left');
+setupTouchButton('btn-right', 'right');
+setupTouchButton('btn-up',    'up');
+setupTouchButton('btn-down',  'down');
+
+const btnStart = document.getElementById('btn-start');
+if (btnStart) {
+  btnStart.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (STATE.state === 'waiting') startCountdown();
+    else if (STATE.state === 'finished') resetRace();
+  });
+}
 
 
+// Update start button text
+
+setInterval(() => {
+    if (btnStart.style.display === 'none') return;
+    if (STATE.state === 'waiting') btnStart.textContent = 'START';
+    else if (STATE.state === 'finished') btnStart.textContent = 'AGAIN';
+    else btnStart.style.display = 'none';
+  }, 200);
 
 
+//  RACE STATE MACHINE
+
+function startCountdown() {
+  STATE.state = 'countdown';
+  STATE.countdown = 3;
+  STATE.countdownTimer = 0;
+  STATE.speed = 0;
+  STATE.position = 0;
+  STATE.cameraDx = 0;
+  STATE.steering  = 0;
+  STATE.lapTime   = 0;
+  STATE.raceTime  = 0;
+  STATE.currentLap = 0;
+  STATE.lapProgress = 0;
+  STATE.nitroActive = false;
+  STATE.nitroTimer = 0;
+  STATE.nitroCollected = 0;
+  STATE.opponentsPassed = 0;
+  opponents = createOpponents();
+  particles.length = 0;
+  if (isTouchDevice) document.getElementById('btn-start').style.display = 'none';
+}
+
+function startRace() {
+  STATE.state = 'racing';
+  STATE.lastTime = performance.now();
+}
+
+function finishRace() {
+  STATE.state = 'finished';
+  if (STATE.lapTime < STATE.bestLap) {
+    STATE.bestLap = STATE.lapTime;
+  }
+
+  if (isTouchDevice) {
+    const btn = document.getElementById('btn-start');
+    btn.style.display = 'block';
+    btn.textContent = 'AGAIN';
+    }
+}
 
 
+function resetRace() {
+  STATE.state     = 'waiting';
+  STATE.speed    = 0;
+  STATE.position = 0;
+  STATE.cameraDx = 0;
+  STATE.steering  = 0;
+  STATE.lapTime   = 0;
+  STATE.raceTime  = 0;
+  STATE.currentLap = 0;
+  STATE.lapProgress = 0;
+  STATE.offRoad   = false;
+  STATE.offRoadTimer = 0;
+  STATE.shakeX = 0; STATE.shakeY = 0;
+  STATE.nitroActive = false;
+  STATE.nitroTimer = 0;
+  STATE.nitroCollected = 0;
+  STATE.opponentsPassed = 0;
+  opponents = createOpponents();
+  particles.length = 0;
+
+  if (isTouchDevice) {
+    const btn = document.getElementById('btn-start');
+    btn.style.display = 'block';
+    btn.textContent = 'START';
+  }
+}
+
+
+function activateNitro() {
+  if (STATE.state !== 'racing') return;
+  if (STATE.nitroTimer > 0 || STATE.nitroActive) return; // already active
+  if (STATE.nitroCollected <= 0) return; // none collected
+  STATE.nitroCollected--;
+  STATE.nitroActive = true;
+  STATE.nitroTimer = NITRO_DURATION;
+}
+
+
+//  PHYSICS UPDATE
+
+function update(dt) {
+  if (STATE.state !== 'racing') return;
+  const clamped = Math.min(dt, 0.1);
+
+  // Steering smoothing
+
+  const targetSteer = (STATE.input.right ? 1 : 0) - (STATE.input.left ? 1 : 0);
+  STATE.steering += (targetSteer - STATE.steering) * Math.min(STEER_SPEED * clamped, 1);
+
+  const speedRatio = STATE.speed / MAX_SPEED;
+  const maxSteer   = 1.5 * (1 - speedRatio * 0.5);
+
+  // Nitro timer
+  if (STATE.nitroActive) {
+    STATE.nitroTimer -= clamped;
+    if (STATE.nitroTimer <= 0) {
+      STATE.nitroActive = false;
+      STATE.nitroTimer = 0;
+    }
+  }
+
+  // Effective max speed
+  const effectiveMax = STATE.nitroActive ? MAX_SPEED * NITRO_MULT : MAX_SPEED;
+
+
+// Acceleration / braking
+  if (STATE.input.accelerate) {
+    STATE.speed += ACCEL * clamped * (STATE.nitroActive ? 1.5 : 1);
+  } else if (STATE.input.brake) {
+    STATE.speed -= BRAKE * clamped;
+    if (STATE.speed < 0) STATE.speed = 0;
+  } else {
+    const dragCoeff = STATE.offRoad ? OFF_ROAD_DRAG : DRAG;
+    STATE.speed *= Math.pow(dragCoeff, clamped * 60);
+  }
+  STATE.speed = Math.max(0, Math.min(STATE.speed, effectiveMax));
+
+
+  if (STATE.input.accelerate) {
+    STATE.speed += ACCEL * clamped * (STATE.nitroActive ? 1.5 : 1);
+
+  }
+   vbuby
+
+
+  // Off-road handling
+  if (STATE.offRoad && STATE.speed > 0) {
+    STATE.speed *= Math.pow(OFF_ROAD_DECEL, clamped * 60);
+    STATE.offRoadTimer -= clamped;
+    if (STATE.offRoadTimer <= 0) STATE.offRoad = false;
+  }
+
+  // Position update
+  const segIdx = Math.floor(STATE.position / SEGMENT_LEN) % TOTAL_SEGMENTS;
+  const seg    = TRACK.segments[segIdx];
+
+  // 
+  // Curve force
+  const curveForce = seg.curve * STATE.speed * CENTRIFUGAL;
+  STATE.cameraDx -= curveForce * clamped;
+
+// Steering
+  STATE.cameraDx += STATE.steering * maxSteer * STATE.speed * clamped;
+  
+  
+  // Forward progress
+  STATE.position += STATE.speed * clamped * (STATE.offRoad ? 0.7 : 1.0);
+
+
+  // off road. detection
+
+  const halfRoad = ROAD_WIDTH / 2;
+  if (Math.abs(STATE.cameraDx) > halfRoad * 0.9) {
+    if (!STATE.offRoad) { STATE.offRoad = true; STATE.offRoadTimer = 0.15; }
+    else ( STATE.offRoad && STATE.speed > 0 )
+    STATE.speed *= Math.pow(OFF_ROAD_DECEL, clamped * 60);
+    STATE.offRoadTimer -= clamped;
+    if (STATE.offRoadTimer <= 0) STATE.offRoad = false;
+  }
+
+  // Position update
+  
 
 
 
