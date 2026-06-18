@@ -955,6 +955,150 @@ const wW = 4 * s, wH = 7 * s;
    // --- Roadside sprites ---
 
 
+  function drawSprites(cameraZ, cameraDx) {
+    const baseIndex = Math.floor(cameraZ / SEGMENT_LEN) % TOTAL_SEGMENTS;
+     const segments  = TRACK.segments;
+
+     let dx = cameraDx;
+     const camSeg   = segments[baseIndex];
+     const cameraY  = camSeg.p1.y + CAMERA_H;
+
+     const visibleSprites = [];
+
+
+     for (let n = 0; n < DRAW_DIST; n++) {
+    const idx = (baseIndex + n) % TOTAL_SEGMENTS;
+    const seg = segments[idx]; 
+
+    const z = seg.p1.z - cameraZ;
+    if (z <= 0) { dx += seg.curve; continue; }
+
+
+    const scale = FIELD_OF_VIEW / z;
+    if (seg.screen.w < 1) { dx += seg.curve; continue; }
+
+    const screenY = H / 2 - ((seg.p1.y - cameraY) * scale);
+    
+
+    for (const sprite of seg.sprites) {
+      const spriteWorldX = sprite.offset * (ROAD_WIDTH / 2);
+      const spriteScreenX = W / 2 + ((spriteWorldX + dx) * scale);
+      visibleSprites.push({
+        type: sprite.type, x: spriteScreenX, y: screenY,
+        scale: scale, zIndex: z,
+      });
+    }
+    dx += seg.curve;
+  }
+
+
+  visibleSprites.sort((a, b) => b.zIndex - a.zIndex);
+
+  for (const sprite of visibleSprites) {
+    drawSprite(sprite.type, sprite.x, sprite.y, sprite.scale);
+  }
+}
+
+
+function drawSprite(type, x, y, scale) {
+  const s = scale / RES;
+  switch (type) {
+    case 'tree': {
+      const tw = 8 * s, th = 30 * s, cr = 20 * s;
+      ctx.fillStyle = '#5c3a1e'; ctx.fillRect(x - tw / 2, y - th, tw, th);
+      ctx.fillStyle = '#2d6b2d';
+      ctx.beginPath();
+      ctx.moveTo(x, y - th - cr * 1.5);
+      ctx.lineTo(x - cr, y - th + cr * 0.3);
+      ctx.lineTo(x + cr, y - th + cr * 0.3);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#3a7d3a';
+      ctx.beginPath(); ctx.arc(x, y - th - cr * 0.3, cr * 0.8, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+
+     case 'bush': {
+      const r = 12 * s;
+      ctx.fillStyle = '#3a7d3a';
+      ctx.beginPath(); ctx.arc(x, y - r * 0.5, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4a8d4a';
+      ctx.beginPath(); ctx.arc(x + r * 0.3, y - r * 0.6, r * 0.6, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+
+
+    case 'sign': {
+      const pw = 3 * s, ph = 25 * s, bw = 14 * s, bh = 10 * s;
+      ctx.fillStyle = '#888'; ctx.fillRect(x - pw / 2, y - ph, pw, ph);
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - bw / 2, y - ph - bh, bw, bh);
+      ctx.fillStyle = '#333'; ctx.fillRect(x - bw * 0.3, y - ph - bh * 0.75, bw * 0.6, bh * 0.4);
+      ctx.beginPath();
+      ctx.moveTo(x + bw * 0.15, y - ph - bh * 0.8);
+      ctx.lineTo(x + bw * 0.35, y - ph - bh * 0.4);
+      ctx.lineTo(x + bw * 0.15, y - ph - bh * 0.1);
+      ctx.closePath(); ctx.fill();
+      break;
+    }
+  }
+}
+
+
+//   player car 
+
+function drawCar(steering, nitroActive) {
+  const steerOffset = steering * 25 / RES;
+  const cx = W / 2 + steerOffset;
+  const cy = H - 75 / RES;
+  const s  = 1 / RES;
+
+  // Nitro Glow Behind Car 
+
+  if (nitroActive) {
+    const glowAlpha = 0.5 + Math.sin(performance.now() * 0.02) * 0.3;
+    const glow = ct.createRadialGradient( cx, cy + 15 * s, 5 * s, cx, cy + 25 * s, 50 * s);
+
+    glow.addColorStop(0, `rgba(0, 180, 255, ${glowAlpha})`);
+    glow.addColorStop(1, 'rgba(0, 100, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(cx - 60 * s, cy - 20 * s, 120 * s, 100 * s);
+
+  }
+
+
+  //Shadow 
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 22 * s, 40 * s, 8 * s, 0, 0, Math.PI * 2); ctx.fill();
+
+  const wW = 10 * s, wH = 16 * s;
+  ctx.fillStyle = '#111';
+
+  ctx.fillRect(cx - 28 * s - wW / 2, cy - 6 * s, wW, wH);
+  ctx.fillRect(cx + 28 * s - wW / 2, cy - 6 * s, wW, wH);
+  ctx.fillRect(cx + 28 * s - wW / 2, cy - 6 * s, wW, wH);
+  ctx.fillRect(cx - 24 * s - wW / 2, cy - 28 * s, wW, wH);
+  ctx.fillRect(cx + 24 * s - wW / 2, cy - 28 * s, wW, wH);
+
+
+
+  
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
+  }
+
 
 
 
