@@ -94,16 +94,16 @@
 //  CONFIGURATION
 
 
-const VIRTUAL_W = 800;
-const VIRTUAL_H = 500;
+const VIRTUAL_W  = 800;   // virtual canvas width (all coords in this space)
+const VIRTUAL_H  = 500;
 const ASPECT     = VIRTUAL_W / VIRTUAL_H;
-const ROAD_ASPECT = 2000;
+const ROAD_WIDTH = 2000;
 const SEGMENT_LEN = 200;
-const DRWA_DIST = 300;
+const DRAW_DIST  = 300;
 const FIELD_OF_VIEW = 400;
-const CAMERA_H = 1500;
-const MAX_SPEED = 400;
-const ACCEL = 300;
+const CAMERA_H   = 1500;
+const MAX_SPEED  = 400;
+const ACCEL      = 300;
 const BRAKE      = 600;
 const DRAG       = 0.97;
 const STEER_SPEED = 3.0;
@@ -115,14 +115,12 @@ const NITRO_DURATION = 2.5; // seconds
 const MAX_PARTICLES = 200;
 const OPPONENT_COUNT = 4;
 
-
-
+// =============================================================================
 //  RESPONSIVE CANVAS
-
+// =============================================================================
 const canvas = document.getElementById('game');
-const ctx   = canvas.getContext('2d');
+const ctx    = canvas.getContext('2d');
 let W, H, RES = 1;
-
 
 function resize() {
   const maxW = window.innerWidth;
@@ -145,34 +143,36 @@ function resize() {
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 100));
 
-
+// =============================================================================
 //  TOUCH DETECTION
-
+// =============================================================================
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (isTouchDevice) {
   document.body.classList.add('touch-active');
 }
 
-// Track Defination 
-
+// =============================================================================
+//  TRACK DEFINITION
+// =============================================================================
 const TRACK_SECTIONS = [
   { count: 40, curve:  0.0, hill:  0.0 },
   { count: 30, curve:  0.3, hill:  0.0 },
   { count: 10, curve:  0.0, hill:  0.0 },
-  { count: 20, curve:  1.2, hill:  0.0 },
-  { count: 15, curve:  0.0, hill:  0.0 },
-  { count: 25, curve:  -0.6, hill: 0.0 },
-  { count: 30, curve:  -0.4, hill: 0.0 },
+  { count: 20, curve:  1.2, hill: -0.5 },
+  { count: 15, curve:  0.0, hill:  0.8 },
+  { count: 25, curve: -0.6, hill: -0.4 },
+  { count: 30, curve: -0.4, hill:  0.0 },
   { count: 20, curve:  0.0, hill:  0.5 },
   { count: 15, curve:  0.7, hill:  0.0 },
   { count: 15, curve: -0.7, hill:  0.0 },
   { count: 25, curve:  0.3, hill:  0.6 },
   { count: 35, curve:  0.0, hill: -0.5 },
   { count: 20, curve: -0.5, hill:  0.0 },
-
 ];
 
-
+// =============================================================================
+//  BUILD TRACK
+// =============================================================================
 function buildTrack(sections) {
   const segments = [];
   let worldZ = 0, hillY = 0;
@@ -206,6 +206,7 @@ function placeSprites(segments) {
   for (let i = 0; i < len; i++) {
     const seg = segments[i];
     const prevSeg = segments[(i - 1 + len) % len];
+
     if (i % 3 === 0) {
       const side = (i % 6 < 3) ? -1 : 1;
       seg.sprites.push({ type: 'tree', offset: side * (1.2 + Math.sin(i * 0.7) * 0.4) });
@@ -224,7 +225,6 @@ function placeSprites(segments) {
   }
 }
 
-
 function placeNitro(segments) {
   // Place nitro pickups on straights and gentle curves, roughly every ~40 segments
   const len = segments.length;
@@ -239,10 +239,9 @@ function placeNitro(segments) {
 const TRACK = buildTrack(TRACK_SECTIONS);
 const TOTAL_SEGMENTS = TRACK.segments.length;
 
-
-
+// =============================================================================
 //  GAME STATE
-
+// =============================================================================
 const STATE = {
   position:    0,
   speed:       0,
@@ -269,7 +268,6 @@ const STATE = {
   offRoadTimer: 0,
   shakeX: 0, shakeY: 0,
 
-
   // Nitro
   nitroActive: false,
   nitroTimer:  0,
@@ -279,9 +277,9 @@ const STATE = {
   opponentsPassed: 0,
 };
 
-
-//  OPPONENT CARS.  
-
+// =============================================================================
+//  OPPONENT CARS
+// =============================================================================
 function createOpponents() {
   const opponents = [];
   const colors = ['#2266cc', '#44aa22', '#cc8800', '#aa44cc'];
@@ -305,8 +303,9 @@ function createOpponents() {
 
 let opponents = createOpponents();
 
+// =============================================================================
 //  PARTICLE SYSTEM
-
+// =============================================================================
 const particles = [];
 
 function spawnParticle(x, y, vx, vy, life, color, size) {
@@ -315,8 +314,8 @@ function spawnParticle(x, y, vx, vy, life, color, size) {
 }
 
 function spawnSmoke(x, y, scale) {
-  const count = 3 + Math.floor(Math.random() * 5);
-  for (let i = 0; i < count; i++){
+  const count = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
     spawnParticle(
       x + (Math.random() - 0.5) * 20 * scale,
       y + (Math.random() - 0.5) * 10 * scale,
@@ -328,7 +327,6 @@ function spawnSmoke(x, y, scale) {
     );
   }
 }
-
 
 function spawnSparks(x, y, scale) {
   const count = 3 + Math.floor(Math.random() * 5);
@@ -357,9 +355,7 @@ function spawnNitroFlame(x, y, scale) {
       2 * scale + Math.random() * 6 * scale
     );
   }
-
 }
-
 
 function updateParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -370,7 +366,6 @@ function updateParticles(dt) {
     if (p.life <= 0) particles.splice(i, 1);
   }
 }
-
 
 function renderParticles() {
   for (const p of particles) {
@@ -383,16 +378,15 @@ function renderParticles() {
   }
 }
 
-
+// =============================================================================
 //  INPUT HANDLING
-
-
+// =============================================================================
 function setInput(key, down) {
-  switch(key) {
+  switch (key) {
     case 'up':    STATE.input.accelerate = down; break;
-    case 'down':  STATE.input.brake = down; break;
-    case 'left':  STATE.input.brake = down; break;
-    case 'right': STATE.input.brake = down; break;
+    case 'down':  STATE.input.brake      = down; break;
+    case 'left':  STATE.input.left       = down; break;
+    case 'right': STATE.input.right      = down; break;
   }
 }
 
@@ -403,18 +397,16 @@ document.addEventListener('keydown', (e) => {
     case 'ArrowLeft':  case 'KeyA': setInput('left', true); break;
     case 'ArrowRight': case 'KeyD': setInput('right', true); break;
     case 'Space': case 'Enter':
-       if (STATE.state === 'waiting') startCountdown();
+      if (STATE.state === 'waiting') startCountdown();
       else if (STATE.state === 'finished') resetRace();
       break;
-      case 'KeyN' // N for Nitro
-
+    case 'KeyN': // N for nitro (keyboard shortcut)
       activateNitro();
       break;
     default: return;
   }
   e.preventDefault();
 });
-
 
 document.addEventListener('keyup', (e) => {
   switch (e.code) {
@@ -428,7 +420,6 @@ document.addEventListener('keyup', (e) => {
 });
 
 // Touch controls
-
 function setupTouchButton(id, key) {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -450,28 +441,25 @@ if (btnStart) {
     if (STATE.state === 'waiting') startCountdown();
     else if (STATE.state === 'finished') resetRace();
   });
-}
-
-
-// Update start button text
-
-setInterval(() => {
+  // Update start button text
+  setInterval(() => {
     if (btnStart.style.display === 'none') return;
     if (STATE.state === 'waiting') btnStart.textContent = 'START';
     else if (STATE.state === 'finished') btnStart.textContent = 'AGAIN';
     else btnStart.style.display = 'none';
   }, 200);
+}
 
-
+// =============================================================================
 //  RACE STATE MACHINE
-
+// =============================================================================
 function startCountdown() {
-  STATE.state = 'countdown';
+  STATE.state     = 'countdown';
   STATE.countdown = 3;
   STATE.countdownTimer = 0;
-  STATE.speed = 0;
-  STATE.position = 0;
-  STATE.cameraDx = 0;
+  STATE.speed     = 0;
+  STATE.position  = 0;
+  STATE.cameraDx  = 0;
   STATE.steering  = 0;
   STATE.lapTime   = 0;
   STATE.raceTime  = 0;
@@ -487,7 +475,7 @@ function startCountdown() {
 }
 
 function startRace() {
-  STATE.state = 'racing';
+  STATE.state    = 'racing';
   STATE.lastTime = performance.now();
 }
 
@@ -496,20 +484,18 @@ function finishRace() {
   if (STATE.lapTime < STATE.bestLap) {
     STATE.bestLap = STATE.lapTime;
   }
-
   if (isTouchDevice) {
     const btn = document.getElementById('btn-start');
     btn.style.display = 'block';
     btn.textContent = 'AGAIN';
-    }
+  }
 }
-
 
 function resetRace() {
   STATE.state     = 'waiting';
-  STATE.speed    = 0;
-  STATE.position = 0;
-  STATE.cameraDx = 0;
+  STATE.speed     = 0;
+  STATE.position  = 0;
+  STATE.cameraDx  = 0;
   STATE.steering  = 0;
   STATE.lapTime   = 0;
   STATE.raceTime  = 0;
@@ -524,14 +510,12 @@ function resetRace() {
   STATE.opponentsPassed = 0;
   opponents = createOpponents();
   particles.length = 0;
-
   if (isTouchDevice) {
     const btn = document.getElementById('btn-start');
     btn.style.display = 'block';
     btn.textContent = 'START';
   }
 }
-
 
 function activateNitro() {
   if (STATE.state !== 'racing') return;
@@ -542,15 +526,14 @@ function activateNitro() {
   STATE.nitroTimer = NITRO_DURATION;
 }
 
-
+// =============================================================================
 //  PHYSICS UPDATE
-
+// =============================================================================
 function update(dt) {
   if (STATE.state !== 'racing') return;
   const clamped = Math.min(dt, 0.1);
 
   // Steering smoothing
-
   const targetSteer = (STATE.input.right ? 1 : 0) - (STATE.input.left ? 1 : 0);
   STATE.steering += (targetSteer - STATE.steering) * Math.min(STEER_SPEED * clamped, 1);
 
@@ -569,8 +552,7 @@ function update(dt) {
   // Effective max speed
   const effectiveMax = STATE.nitroActive ? MAX_SPEED * NITRO_MULT : MAX_SPEED;
 
-
-// Acceleration / braking
+  // Acceleration / braking
   if (STATE.input.accelerate) {
     STATE.speed += ACCEL * clamped * (STATE.nitroActive ? 1.5 : 1);
   } else if (STATE.input.brake) {
@@ -581,14 +563,6 @@ function update(dt) {
     STATE.speed *= Math.pow(dragCoeff, clamped * 60);
   }
   STATE.speed = Math.max(0, Math.min(STATE.speed, effectiveMax));
-
-
-  if (STATE.input.accelerate) {
-    STATE.speed += ACCEL * clamped * (STATE.nitroActive ? 1.5 : 1);
-
-  }
-   vbuby
-
 
   // Off-road handling
   if (STATE.offRoad && STATE.speed > 0) {
@@ -601,28 +575,25 @@ function update(dt) {
   const segIdx = Math.floor(STATE.position / SEGMENT_LEN) % TOTAL_SEGMENTS;
   const seg    = TRACK.segments[segIdx];
 
-  // 
   // Curve force
   const curveForce = seg.curve * STATE.speed * CENTRIFUGAL;
   STATE.cameraDx -= curveForce * clamped;
 
-// Steering
+  // Steering
   STATE.cameraDx += STATE.steering * maxSteer * STATE.speed * clamped;
-  
-  
+
   // Forward progress
   STATE.position += STATE.speed * clamped * (STATE.offRoad ? 0.7 : 1.0);
 
-
-  // off road. detection
-
+  // Off-road detection
   const halfRoad = ROAD_WIDTH / 2;
   if (Math.abs(STATE.cameraDx) > halfRoad * 0.9) {
     if (!STATE.offRoad) { STATE.offRoad = true; STATE.offRoadTimer = 0.15; }
-    else ( STATE.offRoad && STATE.speed > 0 )
-    STATE.speed *= Math.pow(OFF_ROAD_DECEL, clamped * 60);
-    STATE.offRoadTimer -= clamped;
-    if (STATE.offRoadTimer <= 0) STATE.offRoad = false;
+    else { STATE.offRoadTimer = Math.max(STATE.offRoadTimer, 0.05); }
+    STATE.shakeX = (Math.random() - 0.5) * 8;
+    STATE.shakeY = (Math.random() - 0.5) * 8;
+  } else {
+    STATE.shakeX *= 0.8; STATE.shakeY *= 0.8;
   }
 
   // Nitro pickup detection
@@ -634,28 +605,24 @@ function update(dt) {
     }
   }
 
-
-   // --- Opponent AI ---
-
-   for (const opp of opponents) {
+  // --- Opponent AI ---
+  for (const opp of opponents) {
     opp.position += opp.speed * clamped;
-     //lane wobble 
-
+    // Lane wobble
     opp.wobble += opp.wobbleSpeed * clamped;
     opp.laneOffset += Math.sin(opp.wobble) * 0.001;
-    opp.laneOffset = Math.max(-0.45, Math.min(0.45, oppo.laneOffset));
+    opp.laneOffset = Math.max(-0.45, Math.min(0.45, opp.laneOffset));
 
     // Detect opponent overtake
-
     const playerPos = STATE.position % TRACK.totalLength;
-    const oppoPos = opp.position % TRACK.totalLength;
-
-// Simple detection: if player is close behind and then ahead.  // // We'll handle this in the render/hud via distance comparison
+    const oppPos = opp.position % TRACK.totalLength;
+    // Simple detection: if player is close behind and then ahead
+    // We'll handle this in the render/hud via distance comparison
   }
 
-  //  --- Lap detection ---
+  // --- Lap detection ---
   const prevProgress = STATE.lapProgress;
-  STATE.lapProgress = (STATE.position % TRACK.totalLength) / TRACK.totalLength();
+  STATE.lapProgress  = (STATE.position % TRACK.totalLength) / TRACK.totalLength;
 
   if (prevProgress > 0.9 && STATE.lapProgress < 0.1) {
     if (STATE.currentLap > 0) {
@@ -668,46 +635,35 @@ function update(dt) {
     }
   }
 
-  if(STATE.state === 'racing') {
-    STATE.lapTime += clamped;
+  if (STATE.state === 'racing') {
+    STATE.lapTime  += clamped;
     STATE.raceTime += clamped;
   }
 
+  // --- Particles ---
+  updateParticles(dt);
 
-// particle 
-
-updateParticles(dt);
-
-
-// Spawn tire smoke when accelerating hard
-
-if (STATE.input.accelerate && STATE.speed > 100 && Math.random() < 0.3){
-  spawnSmoke(W / 2 + STATE.steering * 25, H * 0.85, 0.5 + STATE.speed / MAX_SPEED * 0.8);
+  // Spawn tire smoke when accelerating hard
+  if (STATE.input.accelerate && STATE.speed > 100 && Math.random() < 0.3) {
+    spawnSmoke(W / 2 + STATE.steering * 25, H * 0.85, 0.5 + STATE.speed / MAX_SPEED * 0.8);
   }
-
-
   // Nitro flames
-
   if (STATE.nitroActive && Math.random() < 0.7) {
     spawnNitroFlame(W / 2 + (Math.random() - 0.5) * 20, H * 0.88, 0.6);
   }
-
-   // Off-road dust
-
-   if (STATE.offRoad) {
-    spawnNitroFlame(W / 2 +(Math.random() - 0.5) * 60, H * 0.8, 0.4);
+  // Off-road dust
+  if (STATE.offRoad && Math.random() < 0.5) {
+    spawnSmoke(W / 2 + (Math.random() - 0.5) * 60, H * 0.8, 0.4);
   }
-
-
   // Rumble sparks when near edge
-if (Math.abs(STATE.cameraDx) > halfRoad * 0.7 && Math.abs(STATE.cameraDx) < halfRoad * 0.95 && Math.random() < 0.2) {
-  spawnSparks(W / 2 + (STATE.cameraDx > 0 ? 1 : -1) * 100, H * 0.82, 0.3);
+  if (Math.abs(STATE.cameraDx) > halfRoad * 0.7 && Math.abs(STATE.cameraDx) < halfRoad * 0.95 && Math.random() < 0.2) {
+    spawnSparks(W / 2 + (STATE.cameraDx > 0 ? 1 : -1) * 100, H * 0.82, 0.3);
   }
 }
 
-
+// =============================================================================
 //  RENDERING
-
+// =============================================================================
 
 function drawSky() {
   const grad = ctx.createLinearGradient(0, 0, 0, H * 0.55);
@@ -716,6 +672,7 @@ function drawSky() {
   grad.addColorStop(0.85, '#4a6fa5');
   grad.addColorStop(1,    '#87CEEB');
   ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
 
   const sunX = W * 0.75, sunY = H * 0.18, sunR = 30 / RES;
   const glow = ctx.createRadialGradient(sunX, sunY, sunR * 0.5, sunX, sunY, sunR * 3);
@@ -727,13 +684,13 @@ function drawSky() {
   ctx.fillStyle = '#fffde0';
   ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2); ctx.fill();
 }
+
 function drawMountains(cameraDx) {
   const horizonY = H * 0.42;
   const parallax = cameraDx * 0.0005;
 
-   // Back mountains
-
-   ctx.fillStyle = '#3a506b';
+  // Back mountains
+  ctx.fillStyle = '#3a506b';
   ctx.beginPath(); ctx.moveTo(0, H);
   const peaks = 12;
   for (let i = 0; i <= peaks; i++) {
@@ -742,7 +699,6 @@ function drawMountains(cameraDx) {
     ctx.lineTo(x + parallax * 30, horizonY - nh / RES + (i % 3 === 0 ? -15 / RES : 0));
   }
   ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
-
 
   // Front mountains
   ctx.fillStyle = '#5c7c99';
@@ -756,9 +712,10 @@ function drawMountains(cameraDx) {
 }
 
 function drawRoad(cameraZ, cameraDx) {
-  const baseIndex = Math.floor (cameraZ / SEGMENT_LEN) % TOTAL_SEGMENTS;
-  const segments = TRACK.segments;
-let prevScreen = null;
+  const baseIndex = Math.floor(cameraZ / SEGMENT_LEN) % TOTAL_SEGMENTS;
+  const segments  = TRACK.segments;
+
+  let prevScreen = null;
   let dx = cameraDx;
 
   const camSeg   = segments[baseIndex];
@@ -783,7 +740,6 @@ let prevScreen = null;
     seg.screen.scale = scale;
 
     if (prevScreen && prevScreen.y < H) {
-
       drawSegmentTrapezoid(prevScreen, seg.screen, seg.roadColor, seg.curve, seg.nitro);
     }
     prevScreen = { x: screenX, y: screenY, w: screenW, scale };
@@ -795,21 +751,15 @@ let prevScreen = null;
 function drawSegmentTrapezoid(prev, curr, roadColor, curve, hasNitro) {
   const topY = curr.y, bottomY = prev.y;
   if (topY >= bottomY) return;
-}
 
+  // Grass
+  ctx.fillStyle = '#4a7c3f';
+  ctx.fillRect(0, topY, W, bottomY - topY);
 
- // Grass
-
- ctx.fillStyle = '#4a7c3f';
- ctx.fillRect(0, topY, W, bottomY - topY);
-
-
- // Road surface
-
-
- const roadFill = roadColor === 0 ? '#6b6b6b' : '#4a4a4a';
- ctx.fillStyle = roadFill;
- ctx.beginPath();
+  // Road surface
+  const roadFill = roadColor === 0 ? '#6b6b6b' : '#4a4a4a';
+  ctx.fillStyle = roadFill;
+  ctx.beginPath();
   ctx.moveTo(curr.x - curr.w, curr.y);
   ctx.lineTo(curr.x + curr.w, curr.y);
   ctx.lineTo(prev.x + prev.w, prev.y);
@@ -817,9 +767,9 @@ function drawSegmentTrapezoid(prev, curr, roadColor, curve, hasNitro) {
   ctx.closePath();
   ctx.fill();
 
-// Nitro pickup glow on road
-if (hasNitro && curr.w > 3) {
-  const alpha = 0.4 + Math.sin(performance.now() * 0.005) * 0.2;
+  // Nitro pickup glow on road
+  if (hasNitro && curr.w > 3) {
+    const alpha = 0.4 + Math.sin(performance.now() * 0.005) * 0.2;
     const glowW_curr = curr.w * 0.06;
     const glowW_prev = prev.w * 0.06;
     ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
@@ -830,7 +780,6 @@ if (hasNitro && curr.w > 3) {
     ctx.lineTo(prev.x - glowW_prev, prev.y);
     ctx.closePath();
     ctx.fill();
-
     // Outer glow
     const outW_curr = curr.w * 0.1;
     const outW_prev = prev.w * 0.1;
@@ -842,7 +791,168 @@ if (hasNitro && curr.w > 3) {
     ctx.lineTo(prev.x - outW_prev, prev.y);
     ctx.closePath();
     ctx.fill();
+  }
+
+  // Rumble strips
+  const rumW_c = curr.w * 0.08, rumW_p = prev.w * 0.08;
+  const rumblePhase = Math.floor(curr.scale * 500) % 2 === 0;
+
+  drawRumble(
+    curr.x - curr.w, curr.y,
+    curr.x - curr.w + rumW_c, curr.y,
+    prev.x - prev.w + rumW_p, prev.y,
+    prev.x - prev.w, prev.y,
+    rumblePhase
+  );
+  drawRumble(
+    curr.x + curr.w - rumW_c, curr.y,
+    curr.x + curr.w, curr.y,
+    prev.x + prev.w, prev.y,
+    prev.x + prev.w - rumW_p, prev.y,
+    !rumblePhase
+  );
+
+  // Lane divider
+  if (roadColor === 0 && curr.w > 3) {
+    const dW_c = curr.w * 0.015, dW_p = prev.w * 0.015;
+    ctx.fillStyle = '#cccccc';
+    ctx.beginPath();
+    ctx.moveTo(curr.x - dW_c, curr.y);
+    ctx.lineTo(curr.x + dW_c, curr.y);
+    ctx.lineTo(prev.x + dW_p, prev.y);
+    ctx.lineTo(prev.x - dW_p, prev.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Edge lines
+  if (curr.w > 2) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(curr.x - curr.w, curr.y); ctx.lineTo(prev.x - prev.w, prev.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(curr.x + curr.w, curr.y); ctx.lineTo(prev.x + prev.w, prev.y); ctx.stroke();
+  }
 }
+
+function drawRumble(x1t, y1t, x2t, y2t, x2b, y2b, x1b, y1b, isRed) {
+  ctx.fillStyle = isRed ? '#cc3333' : '#f0f0f0';
+  ctx.beginPath();
+  ctx.moveTo(x1t, y1t); ctx.lineTo(x2t, y2t);
+  ctx.lineTo(x2b, y2b); ctx.lineTo(x1b, y1b);
+  ctx.closePath(); ctx.fill();
+}
+
+// --- Opponent car rendering ---
+function drawOpponents(cameraZ, cameraDx) {
+  const baseIndex = Math.floor(cameraZ / SEGMENT_LEN) % TOTAL_SEGMENTS;
+  const segments  = TRACK.segments;
+  const camSeg    = segments[baseIndex];
+  const cameraY   = camSeg.p1.y + CAMERA_H;
+
+  // Collect visible opponents
+  const visible = [];
+
+  for (const opp of opponents) {
+    const oppTrackPos = opp.position % TRACK.totalLength;
+    const z = oppTrackPos - (cameraZ % TRACK.totalLength);
+
+    // Handle wrap-around
+    let worldZ;
+    if (z > TRACK.totalLength / 2) {
+      worldZ = cameraZ - (TRACK.totalLength - oppTrackPos); // opponent behind
+    } else if (z < -TRACK.totalLength / 2) {
+      worldZ = cameraZ + (TRACK.totalLength + oppTrackPos); // opponent ahead (wrapped)
+    } else {
+      worldZ = cameraZ + z;
+    }
+
+    const segIdx = Math.floor(oppTrackPos / SEGMENT_LEN) % TOTAL_SEGMENTS;
+    const seg = segments[segIdx];
+
+    const relZ = worldZ - cameraZ;
+    if (relZ <= 0 || relZ > DRAW_DIST * SEGMENT_LEN) continue;
+
+    const scale = FIELD_OF_VIEW / relZ;
+    if (scale * ROAD_WIDTH < 1) continue;
+
+    const opponentDx = opp.laneOffset * (ROAD_WIDTH / 2);
+    const roadY = seg.p1.y;
+    const screenX = W / 2 + ((opponentDx - cameraDx) * scale);
+    const screenY = H / 2 - ((roadY - cameraY) * scale);
+    const screenScale = scale;
+
+    visible.push({
+      opp,
+      x: screenX,
+      y: screenY,
+      scale: screenScale,
+      zIndex: relZ,
+      worldZ,
+    });
+  }
+
+  // Sort far-to-near
+  visible.sort((a, b) => b.zIndex - a.zIndex);
+
+  for (const v of visible) {
+    drawOpponentCar(v.x, v.y, v.scale, v.opp.color);
+    // Spawn particles behind opponents
+    if (Math.random() < 0.15) {
+      spawnSmoke(v.x, v.y + 5 * v.scale, v.scale * 0.1);
+    }
+  }
+}
+
+function drawOpponentCar(x, y, scale, color) {
+  const s = scale / RES;
+  if (s < 0.02) return;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 4 * s, 8 * s, 3 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+//  Wheel 
+
+const wW = 4 * s, wH = 7 * s;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(x - 8 * s - wW / 2, y - 2 * s, wW, wH);
+  ctx.fillRect(x + 8 * s - wW / 2, y - 2 * s, wW, wH);
+  ctx.fillRect(x - 7 * s - wW / 2, y - 14 * s, wW, wH);
+  ctx.fillRect(x + 7 * s - wW / 2, y - 14 * s, wW, wH);
+
+
+   // Body
+   ctx.fillStyle =color;
+   ctx.beginPath();
+   ctx.moveTo(x - 9  * s, y + 4 * s);
+   ctx.lineTo(x - 8 * s, y - 3 * s);
+   ctx.lineTo(x - 6 * s, y - 12 * s);
+   ctx.lineTo(x - 3 * s, y - 16 * s);
+   ctx.lineTo(x + 3 * s, y - 16 * s);
+   ctx.lineTo(x + 6 * s, y - 12 * s);
+   ctx.lineTo(x + 8 * s, y - 3 * s);
+   ctx.lineTo(x + 9 * s, y + 4 * s);
+   ctx.closePathPath();
+   ctx.fill();
+
+
+
+
+   // Windshield
+
+   ctx.fillStyle = '#334455'
+   ctx.beginPath();
+   ctx.moveTo(x - 5 * s, y - 10 * s);
+   ctx.moveTo(x - 2 * s, y - 14 * s);
+   ctx.moveTo(x + 2 * s, y - 14 * s);
+   ctx.moveTo(x + 5 * s, y - 10 * s);
+   ctx.closePath();
+   ctx.fill();
+
+
+   // --- Roadside sprites ---
 
 
 
