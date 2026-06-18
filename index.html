@@ -1079,6 +1079,126 @@ function drawCar(steering, nitroActive) {
   ctx.fillRect(cx - 24 * s - wW / 2, cy - 28 * s, wW, wH);
   ctx.fillRect(cx + 24 * s - wW / 2, cy - 28 * s, wW, wH);
 
+  // body 
+
+  const bodyColor = nitroActive ? '#ff4444' : '#cc2222';
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(cx - 30 * s, cy + 15 * s);
+  ctx.moveTo(cx - 28 * s, cy - 5 * s);
+  ctx.moveTo(cx - 25 * s, cy - 20 * s);
+  ctx.lineTo(cx - 18 * s, cy - 32 * s);
+  ctx.lineTo(cx - 8 * s,  cy - 36 * s);
+  ctx.moveTo(cx + 8 * s, cy - 36 * s);
+  ctx.lineTo(cx + 18 * s, cy - 32 * s);
+  ctx.lineTo(cx + 25 * s, cy - 20 * s);
+  ctx.lineTo(cx + 28 * s, cy - 5 * s);
+  ctx.lineTo(cx + 30 * s, cy + 15 * s);
+  ctx.closePath(); ctx.fill();
+
+  //body highlight
+  ctx.fillStyle = nitroActive ? '#ff6666' : '#dd4444';
+  ctx.beginPath();
+  ctx.moveTo(cx - 28 * s, cy - 5 * s);
+  ctx.moveTo(cx - 25 * s, cy - 20 * s);
+  ctx.moveTo(cx - 18 * s, cy - 32 * s);
+  ctx.moveTo(cx - 8 * s, cy - 36 * s);
+  ctx.moveTo(cx + 8 * s, cy - 36 * s);
+  ctx.moveTo(cx + 10 * s, cy - 30 * s);
+  ctx.moveTo(cx - 5 * s, cy - 18 * s);
+  ctx.moveTo(cx - 10 * s, cy - 5 * s);
+  ctx.closePath(); ctx.fill();
+
+
+   // Windshield
+
+   ctx.fillStyle = '#334455';
+   ctx.beginPath();
+   ctx.moveTo(cx - 14 * s, cy - 23 * s);
+   ctx.moveTo(cx - 6 * s,  cy - 30 * s);
+   ctx.moveTo(cx + 6 * s,  cy - 30 * s);
+   ctx.moveTo(cx + 14 * s, cy - 23 * s);
+   ctx.closePath(); ctx.fill();
+
+   ctx.fillStyle = 'rgba(135,206,250,0.3)';
+   ctx.beginPath();
+   ctx.moveTo(cx - 6 * s, cy - 25 * s);
+   ctx.lineTo(cx, cy - 29 * s);
+   ctx.lineTo(cx + 6 * s, cy - 26 * s);
+   ctx.lineTo(cx, cy - 23 * s);
+   ctx.closePath(); ctx.fill();
+
+
+   // Spoiler
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(cx - 32 * s, cy + 8 * s, 64 * s, 5 * s);
+}
+
+function drawHUD() { 
+  const s = 1 / RES;
+  ctx.textAlign = 'right';
+
+
+  // speed 
+
+  const speedKmh = Math.floor(STATE.speed * 0.6);
+  ctx.fillStyle = STATE.nitroActive ? '#00ccff' : '#fff';
+  ctx.font = `bold ${24 / RES}px "Courier New", monospace`;
+  ctx.fillText(`${speedKmh}`, W - 20 / RES, H - 20 / RES);
+  ctx.font = `${10 / RES}px "Courier New", monospace`;
+  ctx.fillText('km/h', W - 20 / RES, H - 5 / RES);
+
+
+
+
+  // Speed bar
+
+  const barX = W - 55 / RES, barY = H - 40 / RES;
+  const barW = 12 / RES, barH = 80 / RES;
+  const effectiveMax = STATE.nitroActive ? MAX_SPEED * NITRO_MULT : MAX_SPEED;
+  const speedRatio = STATE.speed / effectiveMax;
+
+  ctx.fillStyle = '#222'; 
+  ctx.fillRect(barX, barY - barH, barW, barH);
+  const grad = ctx.createLinearGradient(barX, barY, barX, barY - barH);
+  if(STATE.nitroActive) {
+    grad.addColorStop(0, '#00ccff');
+    grad.addColorStop(0.5, '#0066ff');
+    grad.addColorStop(1, '#4400ff');
+    } else {
+      grad.addColorStop(0, '#00ff00');
+    grad.addColorStop(0.5, '#ffff00');
+    grad.addColorStop(1, '#ff0000');
+
+  }
+
+  ctx.fillStyle = 'grad';
+  ctx.fillRect(barX + 1 / RES, barY - (barH * speedRatio) + 1 / RES, barW - 2 / RES, barH * speedRatio - 2 / RES);
+
+
+
+
+  // Nitro indicator
+  if (STATE.nitroCollected > 0 || STATE.nitroActive) {
+    ctx.textAlign = 'right';
+    const nitroX = W - 75 / RES, nitroY = 20 / RES;
+    if (STATE.nitroActive) {
+      const pulse = 0.7 + Math.sin(performance.now() * 0.015) * 0.3;
+      ctx.fillStyle = `rgba(0, 180, 255, ${pulse})`;
+      ctx.fillText(`NITRO ${STATE.nitroTimer.toFixed(1)}s`, nitroX, nitroY);
+    } else {
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText(`NITRO x${STATE.nitroCollected} [N]`, nitroX, nitroY);
+    }
+  }
+
+
+
+  // lap info
+
+
+
+
 
 
   
@@ -1097,7 +1217,7 @@ function drawCar(steering, nitroActive) {
 
 
 
-  }
+  
 
 
 
