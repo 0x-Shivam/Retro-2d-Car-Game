@@ -3,7 +3,7 @@ it is concept in which game is made in 2d flat surface but give illusion of 3d. 
 I try to just recreate using some js and css 
 
 # Demo - 
-- Here is demo -- 
+- Here is demo --   https://2d-retro-carrace.netlify.app/
 
 
 # Tech Stack 
