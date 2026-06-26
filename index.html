@@ -569,8 +569,7 @@ function update(dt) {
   STATE.cameraDx -= curveForce * clamped;
 
   // Steering
-  STATE.cameraDx += STATE.steering * maxSteer * STATE.speed * clamped;
-
+  STATE.cameraDx -= STATE.steering * maxSteer * STATE.speed * clamped;
   // Forward progress
   STATE.position += STATE.speed * clamped * (STATE.offRoad ? 0.7 : 1.0);
 
