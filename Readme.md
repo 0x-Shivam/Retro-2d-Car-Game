@@ -11,6 +11,7 @@ Html, Css and Js
 
 # Ai use
 - Use of ai just understandig of it working and archicture 
+-  also to get better understand and implemention of behind pseudo-3D rendering (Z-depth, FOV scaling).
 
 
 
